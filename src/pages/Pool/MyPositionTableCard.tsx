@@ -249,10 +249,10 @@ export function MyEditedPositionTableCard({
         // sort by price
         .sort((a, b) => {
           return !!invertedTokenOrder
-            ? b.deposit.centerTickIndex.toNumber() -
-                a.deposit.centerTickIndex.toNumber()
-            : a.deposit.centerTickIndex.toNumber() -
-                b.deposit.centerTickIndex.toNumber();
+            ? b.deposit.center_tick_index.toNumber() -
+                a.deposit.center_tick_index.toNumber()
+            : a.deposit.center_tick_index.toNumber() -
+                b.deposit.center_tick_index.toNumber();
         })
     );
   }, [editedUserPosition, invertedTokenOrder]);
@@ -332,8 +332,8 @@ export function MyEditedPositionTableCard({
           const [valueA, valueB] = poolValues[index];
 
           const tickIndexBToA = !invertedTokenOrder
-            ? new BigNumber(deposit.centerTickIndex.toNumber())
-            : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
+            ? new BigNumber(deposit.center_tick_index.toNumber())
+            : new BigNumber(deposit.center_tick_index.toNumber()).negated();
 
           const displayPriceBToA = tickIndexToDisplayPrice(
             tickIndexBToA,
@@ -405,8 +405,8 @@ export function MyEditedPositionTableCard({
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
-                            return tick.deposit.centerTickIndex.toNumber() ===
-                              deposit.centerTickIndex.toNumber() &&
+                            return tick.deposit.center_tick_index.toNumber() ===
+                              deposit.center_tick_index.toNumber() &&
                               tick.deposit.fee.toNumber() ===
                                 deposit.fee.toNumber()
                               ? {
@@ -433,8 +433,8 @@ export function MyEditedPositionTableCard({
                     onClick={() => {
                       setEditedUserPosition((ticks) => {
                         return ticks.map((tick) => {
-                          return tick.deposit.centerTickIndex.toNumber() ===
-                            deposit.centerTickIndex.toNumber() &&
+                          return tick.deposit.center_tick_index.toNumber() ===
+                            deposit.center_tick_index.toNumber() &&
                             tick.deposit.fee.toNumber() ===
                               deposit.fee.toNumber()
                             ? {
