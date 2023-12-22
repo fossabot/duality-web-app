@@ -18,7 +18,6 @@ import {
   getDisplayDenomAmount,
   getTokenId,
 } from '../../lib/web3/utils/tokens';
-import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
 import {
   formatAmount,
   formatMaximumSignificantDecimals,
@@ -33,6 +32,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
   LimitOrderTypeKeys,
@@ -340,6 +340,8 @@ function LimitOrder({
     return undefined;
   }, [formState, showLimitPrice]);
 
+  const [chainFeeToken] = useChainFeeToken();
+
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mt-2 mb-4">
@@ -442,13 +444,17 @@ function LimitOrder({
       <div>
         <NumericValueRow
           prefix="Est. Fee"
-          value={formatPrice(
-            formatMaximumSignificantDecimals(
-              getDisplayDenomAmount(dualityMainToken, gasEstimate || 0) || 0,
-              3
-            )
-          )}
-          suffix={dualityMainToken.symbol}
+          value={
+            chainFeeToken
+              ? formatPrice(
+                  formatMaximumSignificantDecimals(
+                    getDisplayDenomAmount(chainFeeToken, gasEstimate || 0) || 0,
+                    3
+                  )
+                )
+              : 'N/A'
+          }
+          suffix={chainFeeToken?.symbol}
         />
       </div>
       <div>
