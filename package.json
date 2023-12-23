@@ -16,7 +16,7 @@
     "npm": "^8.5.0"
   },
   "dependencies": {
-    "@chain-registry/keplr": "^1.22.1",
+    "@chain-registry/keplr": "^1.30.0",
     "@cosmjs/crypto": "0.31.1",
     "@cosmjs/proto-signing": "0.31.1",
     "@cosmjs/stargate": "0.31.1",
@@ -38,7 +38,7 @@
     "@visx/tooltip": "^3.1.2",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
-    "chain-registry": "^1.20.0",
+    "chain-registry": "^1.25.0",
     "invariant": "^2.2.4",
     "long": "^5.2.3",
     "react": "^18.2.0",
@@ -57,7 +57,7 @@
     "stream": "npm:stream-browserify@3.0.0"
   },
   "devDependencies": {
-    "@chain-registry/types": "^0.16.0",
+    "@chain-registry/types": "^0.17.1",
     "@keplr-wallet/types": "^0.12.20",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
