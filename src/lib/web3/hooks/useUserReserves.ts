@@ -624,6 +624,11 @@ export function useAccurateUserReserves(
   );
 
   const userReserves = useMemo<UserReserves[]>(() => {
+    console.log('userIndicativeReserves', userIndicativeReserves);
+    console.log(
+      'userSpecificLiquidityKeyValues',
+      userSpecificLiquidityKeyValues
+    );
     if (
       userIndicativeReserves?.length &&
       userSpecificLiquidityKeyValues?.length
