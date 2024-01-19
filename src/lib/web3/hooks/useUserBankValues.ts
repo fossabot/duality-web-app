@@ -5,7 +5,7 @@ import { Token, getDenomAmount } from '../utils/tokens';
 import { TokenCoin, useUserBankBalances } from './useUserBankBalances';
 import { useSimplePrice } from '../../tokenPrices';
 
-type TokenCoinWithValue = TokenCoin & {
+export type TokenCoinWithValue = TokenCoin & {
   value: BigNumber | undefined;
 };
 
@@ -15,12 +15,14 @@ export function useUserBankValues(): TokenCoinWithValue[] {
 
   // get matched tokens found in the user's balances
   const selectedTokens = useMemo<Token[]>(() => {
+    console.log('useUserBankBalances', balances);
     return (balances || []).map<Token>((balance) => balance.token);
   }, [balances]);
 
   const { data: selectedTokensPrices } = useSimplePrice(selectedTokens);
 
   return useMemo<TokenCoinWithValue[]>(() => {
+    console.log('balances', balances);
     return (balances || []).map((balance) => {
       const { amount, denom, token } = balance;
       const tokenIndex = selectedTokens.indexOf(token);
@@ -40,12 +42,11 @@ export function useUserBankValues(): TokenCoinWithValue[] {
 export function useUserBankValue(): BigNumber {
   const allUserBankAssets = useUserBankValues();
 
-  return useMemo(
-    () =>
-      (allUserBankAssets || []).reduce((result, { value }) => {
-        if (!value) return result;
-        return result.plus(value);
-      }, new BigNumber(0)),
-    [allUserBankAssets]
-  );
+  return useMemo(() => {
+    console.log('allUserBankAssets', allUserBankAssets);
+    return (allUserBankAssets || []).reduce((result, { value }) => {
+      if (!value) return result;
+      return result.plus(value);
+    }, new BigNumber(0));
+  }, [allUserBankAssets]);
 }

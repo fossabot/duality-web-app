@@ -462,6 +462,7 @@ export function useEstimatedUserReserves(
 
   const { data: balances } = useUserBankBalances();
   const userTokensByDenom = useMemo<Map<string, Token>>(() => {
+    console.log('userIndicatveReserves', userIndicatveReserves)
     const map = new Map<string, Token>();
     const restrictToTokens = new Set(
       userIndicatveReserves?.flatMap((reserve) => [
@@ -479,7 +480,10 @@ export function useEstimatedUserReserves(
   }, [balances, userIndicatveReserves]);
 
   const tokenList = useMemo(
-    () => Array.from(userTokensByDenom.values()),
+    () => {
+      console.log('userTokensByDenom', userTokensByDenom)
+      return Array.from(userTokensByDenom.values())
+    },
     [userTokensByDenom]
   );
 
@@ -497,18 +501,19 @@ export function useEstimatedUserReserves(
 
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
-    if (Object.values(tokenPriceByDenomMap).every((price = 0) => price > 0)) {
+    // allow zero prices, will equal zero values
+    if (Object.values(tokenPriceByDenomMap).every((price = 0) => price >= 0)) {
       const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
           const token0 = userTokensByDenom.get(deposit.pair_id.token0);
           const token1 = userTokensByDenom.get(deposit.pair_id.token1);
           const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pair_id.token0);
           const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pair_id.token1);
-          if (token0 && token1 && tokenPrice0 && tokenPrice1) {
+          if (token0 && token1) {
             const display0 = getBaseDenomAmount(token0, 1) || 1;
             const display1 = getBaseDenomAmount(token1, 1) || 1;
-            const basePrice0 = new BigNumber(tokenPrice0).dividedBy(display0);
-            const basePrice1 = new BigNumber(tokenPrice1).dividedBy(display1);
+            const basePrice0 = BigNumber(tokenPrice0 || 0).dividedBy(display0);
+            const basePrice1 = BigNumber(tokenPrice1 || 0).dividedBy(display1);
             const centerTickIndex = priceToTickIndex(
               basePrice1.div(basePrice0)
             );
@@ -629,6 +634,11 @@ export function useAccurateUserReserves(
   );
 
   const userReserves = useMemo<UserReserves[]>(() => {
+    console.log('userIndicativeReserves', userIndicativeReserves);
+    console.log(
+      'userSpecificLiquidityKeyValues',
+      userSpecificLiquidityKeyValues
+    );
     if (
       userIndicativeReserves?.length &&
       userSpecificLiquidityKeyValues?.length

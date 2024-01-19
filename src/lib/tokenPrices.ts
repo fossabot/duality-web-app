@@ -1,19 +1,12 @@
 import useSWR from 'swr';
 import { useEffect, useMemo } from 'react';
+import { Asset } from '@chain-registry/types';
 
 import { ObservableList, useObservableList } from './utils/observableList';
-import { Token } from './web3/utils/tokens';
-import { devChain } from './web3/hooks/useChains';
 
 const { REACT_APP__DEV_ASSET_PRICE_MAP } = import.meta.env;
-const defaultDevAssetPrice = 1;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
-
-// identify dev tokens using a specific dev chain id
-function isDevToken(token?: Token) {
-  return !!devChain && !!token && token.chain?.chain_id === devChain?.chain_id;
-}
 
 const devTokenPriceMap: Record<string, number> = (() => {
   try {
@@ -23,10 +16,8 @@ const devTokenPriceMap: Record<string, number> = (() => {
   }
 })();
 
-function getDevTokenPrice(token: Token | undefined): number | undefined {
-  return token && isDevToken(token)
-    ? devTokenPriceMap[token.symbol] || defaultDevAssetPrice
-    : undefined;
+function getDevAssetPrice(asset: Asset | undefined): number | undefined {
+  return asset ? devTokenPriceMap[asset.base] : undefined;
 }
 
 class FetchError extends Error {
@@ -124,39 +115,39 @@ function useCombinedSimplePrices(
     fetcher,
     {
       // refresh and refetch infrequently to stay below API limits
-      refreshInterval: 10000,
-      dedupingInterval: 10000,
-      focusThrottleInterval: 10000,
-      errorRetryInterval: 10000,
+      refreshInterval: 30000,
+      dedupingInterval: 30000,
+      focusThrottleInterval: 30000,
+      errorRetryInterval: 30000,
     }
   );
 }
 
 const warned = new Set();
 export function useSimplePrices(
-  tokens: (Token | undefined)[],
+  assets: (Asset | undefined)[],
   currencyID = 'usd'
 ) {
-  const tokenIDs = tokens.map((token) => {
+  const assetIDs = assets.map((asset) => {
     // note Coin Gecko ID warning for developers
-    if (token && !token.coingecko_id) {
-      const tokenID = `${token?.base}:${token?.chain.chain_name}`;
-      if (!warned.has(tokenID) && !isDevToken(token)) {
+    if (asset && !asset.coingecko_id) {
+      const tokenID = JSON.stringify(asset);
+      if (!warned.has(tokenID)) {
         // eslint-disable-next-line no-console
         console.warn(
-          `Token ${token.name} (${token.symbol}) has no CoinGecko ID`
+          `Token ${asset.name} (${asset.symbol}) has no CoinGecko ID`
         );
         warned.add(tokenID);
       }
     }
-    return token?.coingecko_id;
+    return asset?.coingecko_id;
   });
 
-  return useCombinedSimplePrices(tokenIDs, currencyID);
+  return useCombinedSimplePrices(assetIDs, currencyID);
 }
 
 export function useSimplePrice(
-  token: Token | undefined,
+  token: Asset | undefined,
   currencyID?: string
 ): {
   data: number | undefined;
@@ -164,7 +155,7 @@ export function useSimplePrice(
   isValidating: boolean;
 };
 export function useSimplePrice(
-  tokens: (Token | undefined)[],
+  assets: (Asset | undefined)[],
   currencyID?: string
 ): {
   data: (number | undefined)[];
@@ -172,26 +163,26 @@ export function useSimplePrice(
   isValidating: boolean;
 };
 export function useSimplePrice(
-  tokenOrTokens: (Token | undefined) | (Token | undefined)[],
+  tokenOrTokens: (Asset | undefined) | (Asset | undefined)[],
   currencyID = 'usd'
 ) {
-  const tokens = useMemo(() => {
+  const assets = useMemo(() => {
     return Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   }, [tokenOrTokens]);
 
-  const { data, error, isValidating } = useSimplePrices(tokens, currencyID);
+  const { data, error, isValidating } = useSimplePrices(assets, currencyID);
 
   // cache the found result array so it doesn't generate updates if the values are equal
   const cachedResults = useMemo(() => {
     // return found results as numbers
-    return tokens.map((token) =>
-      token?.coingecko_id
+    return assets.map((asset) =>
+      asset?.coingecko_id
         ? // if the information is fetchable, return fetched (number) or not yet fetched (undefined)
-          (data?.[token.coingecko_id]?.[currencyID] as number | undefined)
-        : // if the information is not fetchable, return a dev token price or 0 (unpriced)
-          getDevTokenPrice(token) || 0
+          (data?.[asset.coingecko_id]?.[currencyID] as number | undefined)
+        : // if the information is not fetchable, return a dev asset price or 0 (unpriced)
+          getDevAssetPrice(asset) || 0
     );
-  }, [tokens, data, currencyID]);
+  }, [assets, data, currencyID]);
 
   return {
     // return array of results or singular result depending on how it was asked
@@ -202,32 +193,32 @@ export function useSimplePrice(
 }
 
 export function usePairPrice(
-  tokenA: Token | undefined,
-  tokenB: Token | undefined,
+  assetA: Asset | undefined,
+  assetB: Asset | undefined,
   currencyID?: string
 ) {
-  const tokenAResponse = useSimplePrice(tokenA, currencyID);
-  const tokenBResponse = useSimplePrice(tokenB, currencyID);
-  const { data: tokenAPrice } = tokenAResponse;
-  const { data: tokenBPrice } = tokenBResponse;
+  const assetAResponse = useSimplePrice(assetA, currencyID);
+  const assetBResponse = useSimplePrice(assetB, currencyID);
+  const { data: tokenAPrice } = assetAResponse;
+  const { data: tokenBPrice } = assetBResponse;
   const price =
     tokenAPrice !== undefined && tokenBPrice !== undefined
       ? tokenBPrice / tokenAPrice
       : undefined;
   return {
     data: price,
-    isValidating: tokenAResponse.isValidating || tokenBResponse.isValidating,
-    error: tokenAResponse.error || tokenBResponse.error,
+    isValidating: assetAResponse.isValidating || assetBResponse.isValidating,
+    error: assetAResponse.error || assetBResponse.error,
   };
 }
 
 export function useHasPriceData(
-  tokens: (Token | undefined)[],
+  assets: (Asset | undefined)[],
   currencyID = 'usd'
 ) {
-  const { data, isValidating } = useSimplePrice(tokens, currencyID);
-  // do not claim price data if tokens won't use any CoinGecko lookups
-  if (tokens.every((token) => !!token?.coingecko_id)) {
+  const { data, isValidating } = useSimplePrice(assets, currencyID);
+  // do not claim price data if assets won't use any CoinGecko lookups
+  if (assets.every((asset) => !!asset?.coingecko_id)) {
     return false;
   }
   return isValidating || data.some(Boolean);

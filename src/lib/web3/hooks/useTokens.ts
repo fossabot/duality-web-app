@@ -192,70 +192,16 @@ export function useToken(
 
 // connected IBC info into given token list
 export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
-  const ibcOpenTransfersInfo = useIbcOpenTransfers();
   return useMemo((): Array<Token> => {
     return (
       tokenList
+        .filter((v) => v)
         // remove existing IBC informations and add new IBC denom information
         .map(({ ibc, ...token }) => {
-          // return unchanged tokens from native chain
-          if (token.chain.chain_id === nativeChain.chain_id) {
-            return { ...token, ibc: undefined };
-          }
-          // append ibcDenom as a denom alias
-          const ibcOpenTransferInfos = ibcOpenTransfersInfo.filter((info) => {
-            return (
-              info.chain.chain_id === token.chain.chain_id &&
-              info.chain.chain_name === token.chain.chain_name &&
-              info.chain.network_type === nativeChain.network_type
-            );
-          });
-          // found connection info
-          if (ibcOpenTransferInfos) {
-            return {
-              ...token,
-              // append IBC information to existing known token/assets.
-              // Neutron has assets registered in chain-registry,
-              // but for not yet known/documented channels (in dev and testnet)
-              // this appended information allows us to identify which tokens
-              // a Neutron chain IBC denom represents
-              denom_units: token.denom_units.map(
-                ({ aliases = [], ...unit }) => {
-                  const ibcDenoms = ibcOpenTransferInfos.map(({ channel }) => {
-                    return getIbcDenom(
-                      unit.denom,
-                      channel.channel_id,
-                      channel.port_id
-                    );
-                  });
-                  return {
-                    ...unit,
-                    // place the calculated IBC denom as a unit denom alias.
-                    // the local chain knows the IBC denom, and this unit->denom
-                    // of this token and chain is what the IBC denom represents
-                    aliases: [...aliases, ...ibcDenoms],
-                  };
-                }
-              ),
-              // append our calculated IBC denom source information here
-              ibc: {
-                // note: this may not be accurate:
-                //       a channel may transfer many denoms from a source chain.
-                //       this *should* be the base denom of token in question
-                //       because Neutron operates on indivisible (base) denoms,
-                //       but it is *possible* to IBC transfer a non-base denom
-                //       which would be a *bad idea* for whoever did that
-                source_denom: token.base,
-              },
-            };
-          }
-          // else return the unchanged token without IBC info
-          else {
-            return { ...token, ibc: undefined };
-          }
+          return { ...token, chain: nativeChain };
         })
     );
-  }, [tokenList, ibcOpenTransfersInfo]);
+  }, [tokenList]);
 }
 
 // allow matching by token symbol or IBC denom string (typically from a URL)

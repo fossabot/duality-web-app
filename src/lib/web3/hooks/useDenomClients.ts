@@ -326,11 +326,13 @@ async function getAssetClient(
   async function getAssetClient(
     opts: ChainRegistryClientOptions
   ): Promise<ChainRegistryClient | undefined> {
+    console.log('getAssetClient', opts);
     const client = await getClient(opts);
     try {
       // return successfully if we found the asset
       const chainUtil = client.getChainUtil(REACT_APP__CHAIN_NAME);
       if (chainUtil.getAssetByDenom(denom)) {
+        console.log('found denom', denom);
         return client;
       }
     } catch {
@@ -341,6 +343,11 @@ async function getAssetClient(
       const nextTransferChannel = transferChannels.at(nextTransferChannelIndex);
 
       // if we don't have all the channel hops covered then fetch more IBC data
+      console.log('fetch more data', {
+        ibcData: !!ibcData,
+        lastChainName: !!lastChainName,
+        nextTransferChannel: !!nextTransferChannel,
+      });
       if (ibcData && lastChainName && nextTransferChannel) {
         const [portId, channelId] = nextTransferChannel;
         for (const ibcDataRow of ibcData) {
@@ -376,12 +383,20 @@ async function getAssetClient(
       // if this would be the last step then find the assetlist of this chain
       // otherwise we should keep searching IBC data
 
+      //   if (chainName) {
+      //     throw new Error(`getNextChainNameClient ${chainName}`);
+      //   }
+
       if (opts.chainNames.length >= transferChannels.length) {
+        console.log('add asset lists', chainName);
         return getAssetClient({
           ...opts,
           assetListNames: [REACT_APP__CHAIN_NAME, chainName],
+          // also fetch the chain data so we know the asset chain id and name
+          chainNames: [...opts.chainNames, chainName],
         });
       } else {
+        console.log('add chainNames', [...opts.chainNames, chainName]);
         return getAssetClient({
           ...opts,
           chainNames: [...opts.chainNames, chainName],
